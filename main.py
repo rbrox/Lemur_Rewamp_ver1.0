@@ -1,11 +1,15 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Body, Depends
-from app.models.user import UserSchema, UserLoginSchema
+from app.models.UserSchema import UserSchema, UserLoginSchema
 from app.auth.jwt_handler import sign_jwt, decode_jwt
 from app.auth.jwt_bearer import JWTBearer
+from app.database import crud
+from app.database.models.user import User
+from app.database.db import Base, engine, get_db
+from sqlalchemy.orm import Session
 
-
-
+# Create tables if not exist
+Base.metadata.create_all(bind=engine)
 
 
 # Temporary import for demonstration purposes
@@ -41,7 +45,7 @@ def validate_jwt(token: str = Depends(JWTBearer())):
 
 
 @app.post("/signup", tags=["auth"])
-def signup(user:UserSchema):
+def signup(user:UserSchema, db: Session = Depends(get_db)):
     """
     Endpoint to sign up a new user.
     """
@@ -51,6 +55,7 @@ def signup(user:UserSchema):
             raise HTTPException(status_code=400, detail="User already exists with this email")
         
     users_store.append(user)# TO be replaced with database logic
+    user = crud.create_user(db=db, name=user.name, email=user.email, password=user.password)
 
     return sign_jwt(user.email)
     
