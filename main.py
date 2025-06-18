@@ -7,6 +7,8 @@ from app.database import crud
 from app.database.models.user import User
 from app.database.db import Base, engine, get_db
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Create tables if not exist
 Base.metadata.create_all(bind=engine)
@@ -14,6 +16,14 @@ Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 @app.get("/", tags=["test"])
