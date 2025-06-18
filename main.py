@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 Base.metadata.create_all(bind=engine)
 
 
-users_store = []  # Temporary in-memory store
 
 app = FastAPI()
 
@@ -65,15 +64,23 @@ def signup(user:UserSchema, db: Session = Depends(get_db)):
     return sign_jwt(user.email)
     
 @app.post("/login", tags=["auth"])
-def login(user: UserLoginSchema):
+def login(user: UserLoginSchema, db: Session = Depends(get_db)):
     """
     Endpoint to log in a user.
     """
-    for existing_user in users_store:
+    try :
+        existing_user = crud.get_user_by_email(db, user.email)
         if existing_user.email == user.email and existing_user.password == user.password:
             return sign_jwt(user.email)
-        
         elif existing_user.email == user.email:
             raise HTTPException(status_code=400, detail="Incorrect password")
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Something went wrong while logging in")
 
-    raise HTTPException(status_code=404, detail="User not found")
+        
+        
+        
+
+    
