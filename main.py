@@ -22,16 +22,17 @@ def greet():
     return {"Hello":"World!"}
 
 @app.get("/users", response_model=list[UserSchema], tags=["test"])
-def get_users():
+def get_users( db: Session = Depends(get_db)):
     """
     Endpoint to retrieve all users.
     """
-    users = []
+    
     try: 
-        return crud.get_users
+        users =  crud.get_users(db)
     except Exception as e: 
         return HTTPException(status_code=500, detail="Something went wrong while fetching users")
-    
+
+    return users
     # this is a data leak to be fixed later
 
 
@@ -58,7 +59,7 @@ def signup(user:UserSchema, db: Session = Depends(get_db)):
     if crud.get_user_by_email(db, user.email):
         raise HTTPException(status_code=400, detail="User already exists with this email")
         
-    users_store.append(user)# TO be replaced with database logic
+    
     user = crud.create_user(db=db, name=user.name, email=user.email, password=user.password)
 
     return sign_jwt(user.email)
