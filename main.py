@@ -12,8 +12,7 @@ from sqlalchemy.orm import Session
 Base.metadata.create_all(bind=engine)
 
 
-# Temporary import for demonstration purposes
-users_store = []
+users_store = []  # Temporary in-memory store
 
 app = FastAPI()
 
@@ -27,7 +26,13 @@ def get_users():
     """
     Endpoint to retrieve all users.
     """
-    return users_store # this is a data leak to be fixed later
+    users = []
+    try: 
+        return crud.get_users
+    except Exception as e: 
+        return HTTPException(status_code=500, detail="Something went wrong while fetching users")
+    
+    # this is a data leak to be fixed later
 
 
 @app.get("/validate", dependencies=[Depends(JWTBearer())], tags=["test"])
@@ -50,9 +55,8 @@ def signup(user:UserSchema, db: Session = Depends(get_db)):
     Endpoint to sign up a new user.
     """
     # Check for existing email
-    for existing_user in users_store:
-        if existing_user.email == user.email:
-            raise HTTPException(status_code=400, detail="User already exists with this email")
+    if crud.get_user_by_email(db, user.email):
+        raise HTTPException(status_code=400, detail="User already exists with this email")
         
     users_store.append(user)# TO be replaced with database logic
     user = crud.create_user(db=db, name=user.name, email=user.email, password=user.password)
